@@ -1,45 +1,51 @@
+import json
 import boto3
-import csv
-import os
+import logging
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-def process_mitula_html(event, context):
-    s3 = boto3.client("s3")
-    source_bucket = "mitula10"
-    destination_bucket = "infocasas"
+s3 = boto3.client('s3')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    file_key = event['Records'][0]['s3']['object']['key']
     
-    # Obtener el archivo del evento de S3
-    for record in event['Records']:
-        key = record['s3']['object']['key']
-        response = s3.get_object(Bucket=source_bucket, Key=key)
-        html_content = response['Body'].read().decode('utf-8')
-        
-        # Extraer información con BeautifulSoup
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        houses = []
-        today = datetime.utcnow().strftime('%Y-%m-%d')
-        
-        for listing in soup.find_all("div", class_="listing-info"):  # Ajustar selector según estructura real
-            barrio = listing.find("span", class_="location").text if listing.find("span", class_="location") else ""
-            valor = listing.find("span", class_="price").text if listing.find("span", class_="price") else ""
-            habitaciones = listing.find("span", class_="bedrooms").text if listing.find("span", class_="bedrooms") else ""
-            banos = listing.find("span", class_="bathrooms").text if listing.find("span", class_="bathrooms") else ""
-            mts2 = listing.find("span", class_="size").text if listing.find("span", class_="size") else ""
-            
-            houses.append([today, barrio, valor, habitaciones, banos, mts2])
-        
-        # Guardar en CSV en S3
-        csv_key = f"{today}.csv"
-        local_csv = f"/tmp/{csv_key}"
-        
-        with open(local_csv, "w", newline="", encoding="utf-8") as file:
-            writer = csv.writer(file)
-            writer.writerow(["FechaDescarga", "Barrio", "Valor", "NumHabitaciones", "NumBanos", "mts2"])
-            writer.writerows(houses)
-        
-        s3.upload_file(local_csv, destination_bucket, csv_key)
-        print(f"Archivo guardado en s3://{destination_bucket}/{csv_key}")
+    # Log del archivo recibido
+    logger.info(f"Archivo recibido: {file_key}")
     
-    return {"status": "success"}
+    # Validar que el archivo sea un HTML válido
+    if not file_key.startswith("landing-casas/") or not file_key.endswith(".html"):
+        logger.warning(f"Formato de key inválido: {file_key}")
+        return {"statusCode": 400, "body": "Formato de archivo no válido"}
+    
+    # Descargar el archivo desde S3
+    response = s3.get_object(Bucket=bucket_name, Key=file_key)
+    html_content = response['Body'].read().decode('utf-8')
+    
+    # Procesar el HTML con BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Extraer información (esto debe ajustarse a la estructura del HTML)
+    casas = []
+    for casa in soup.find_all(class_='property-card'):
+        barrio = casa.find(class_='barrio').text.strip() if casa.find(class_='barrio') else ""
+        valor = casa.find(class_='precio').text.strip() if casa.find(class_='precio') else ""
+        num_habitaciones = casa.find(class_='habitaciones').text.strip() if casa.find(class_='habitaciones') else ""
+        num_banos = casa.find(class_='banos').text.strip() if casa.find(class_='banos') else ""
+        mts2 = casa.find(class_='metros-cuadrados').text.strip() if casa.find(class_='metros-cuadrados') else ""
+        
+        casas.append([datetime.today().strftime('%Y-%m-%d'), barrio, valor, num_habitaciones, num_banos, mts2])
+    
+    # Guardar los datos en un archivo CSV en S3
+    output_bucket = "casas-final-xxx"
+    output_key = f"{datetime.today().strftime('%Y-%m-%d')}.csv"
+    csv_content = "FechaDescarga,Barrio,Valor,NumHabitaciones,NumBanos,mts2\n"
+    csv_content += "\n".join(",".join(row) for row in casas)
+    
+    s3.put_object(Bucket=output_bucket, Key=output_key, Body=csv_content.encode('utf-8'))
+    
+    logger.info(f"Archivo procesado y guardado en {output_bucket}/{output_key}")
+    
+    return {"statusCode": 200, "body": "Archivo procesado correctamente"}

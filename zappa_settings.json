@@ -1,6 +1,6 @@
 {
     "dev": {
-        "app_function": "lambda2.process_mitula_html",
+        "app_function": "lambda2.lambda_handler",
         "aws_region": "us-east-1",
         "profile_name": "default",
         "project_name": "procesar_html",
@@ -12,10 +12,20 @@
         "role_name": "LabRole",
         "events": [
             {
-                "function": "lambda2.process_mitula_html",
+                "function": "lambda2.lambda_handler",
                 "event_source": {
                     "arn": "arn:aws:s3:::infocasas",
-                    "events": ["s3:ObjectCreated:*"]
+                    "events": ["s3:ObjectCreated:*"],
+                    "filters": [
+                        {
+                            "Name": "prefix",
+                            "Value": "landing-casas/"
+                        },
+                        {
+                            "Name": "suffix",
+                            "Value": ".html"
+                        }
+                    ]
                 }
             }
         ]
