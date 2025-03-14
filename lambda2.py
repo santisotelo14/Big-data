@@ -49,7 +49,7 @@ def process_html(bucket_name, file_key):
     html_content = get_s3_object(bucket_name, file_key)
     data = extract_property_data(html_content)
     
-    output_bucket = "infocasas"
+    output_bucket = "casascsv"
     output_key = f"{datetime.today().strftime('%Y-%m-%d')}.csv"
     save_to_s3(output_bucket, output_key, data)
     
