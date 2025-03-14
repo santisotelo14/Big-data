@@ -3,9 +3,9 @@
         "app_function": "lambda2.lambda_handler",
         "aws_region": "us-east-1",
         "profile_name": "default",
-        "project_name": "procesar_html",
+        "project_name": "casas_html",
         "runtime": "python3.10",
-        "s3_bucket": "infocasas",
+        "s3_bucket": "casascsv",
         "keep_warm": false,
         "apigateway_enabled": false,
         "manage_roles": false,
@@ -14,18 +14,8 @@
             {
                 "function": "lambda2.lambda_handler",
                 "event_source": {
-                    "arn": "arn:aws:s3:::infocasas",
+                    "arn": "arn:aws:s3:::mitula10",
                     "events": ["s3:ObjectCreated:*"],
-                    "filters": [
-                        {
-                            "Name": "prefix",
-                            "Value": "landing-casas/"
-                        },
-                        {
-                            "Name": "suffix",
-                            "Value": ".html"
-                        }
-                    ]
                 }
             }
         ]
