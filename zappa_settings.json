@@ -3,9 +3,9 @@
         "app_function": "lambda2.lambda_handler",
         "aws_region": "us-east-1",
         "profile_name": "default",
-        "project_name": "casas_html",
+        "project_name": "html_convert",
         "runtime": "python3.10",
-        "s3_bucket": "casascsv",
+        "s3_bucket": "zappa-161yzif8t",
         "keep_warm": false,
         "apigateway_enabled": false,
         "manage_roles": false,
@@ -15,7 +15,7 @@
                 "function": "lambda2.lambda_handler",
                 "event_source": {
                     "arn": "arn:aws:s3:::mitula10",
-                    "events": ["s3:ObjectCreated:*"],
+                    "events": ["s3:ObjectCreated:*"]
                 }
             }
         ]
