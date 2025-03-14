@@ -40,15 +40,16 @@ def save_to_s3(bucket_name, file_key, data):
     s3.put_object(Bucket=bucket_name, Key=file_key, Body=csv_content.encode("utf-8"))
 
 def process_html(bucket_name, file_key):
+    logger.info(f"Procesando archivo: {file_key}")
     """Proceso completo de extracción y almacenamiento de datos desde un archivo HTML en S3."""
-    if not file_key.startswith("landing-casas/") or not file_key.endswith(".html"):
+    if not file_key.endswith(".html"):
         logger.warning(f"Formato de key inválido: {file_key}")
         return {"statusCode": 400, "body": "Formato de archivo no válido"}
     
     html_content = get_s3_object(bucket_name, file_key)
     data = extract_property_data(html_content)
     
-    output_bucket = "casas-final"
+    output_bucket = "infocasas"
     output_key = f"{datetime.today().strftime('%Y-%m-%d')}.csv"
     save_to_s3(output_bucket, output_key, data)
     
